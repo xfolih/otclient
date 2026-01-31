@@ -61,11 +61,21 @@ void ResourceManager::terminate()
 bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 {
     // search for modules directory
+#ifdef __EMSCRIPTEN__
+    // External data loader writes to VFS root; PHYSFS needs "/" to find init.lua
+    std::string possiblePaths[] = { "/",
+                                    g_platform.getCurrentDir(),
+                                    g_resources.getBaseDir(),
+                                    g_resources.getBaseDir() + "/game_data/",
+                                    g_resources.getBaseDir() + "../",
+                                    g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
+#else
     std::string possiblePaths[] = { g_platform.getCurrentDir(),
                                     g_resources.getBaseDir(),
                                     g_resources.getBaseDir() + "/game_data/",
                                     g_resources.getBaseDir() + "../",
                                     g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
+#endif
 
     bool found = false;
     for (const auto& dir : possiblePaths) {
