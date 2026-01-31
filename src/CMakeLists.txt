@@ -614,6 +614,7 @@ elseif(ANDROID)
 
 elseif(WASM)
   option(WASM_USE_WASM_EXCEPTIONS "Use native WebAssembly exception handling" ON)
+  option(WASM_EXTERNAL_DATA "Load data/mods/modules/init from server at runtime (no private files in build)" OFF)
 
   set(_WASM_LONGJMP_MODE "emscripten")
   set(_WASM_EXPORTED_FUNCTIONS "_main,_paste_return")
@@ -717,11 +718,24 @@ elseif(WASM)
           -sFETCH=1
           -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency
           -sALLOW_MEMORY_GROWTH=1
+  )
+
+  if(WASM_EXTERNAL_DATA)
+    list(APPEND WASM_LINK_OPTIONS
+          --pre-js=${CMAKE_SOURCE_DIR}/browser/external-data-loader.js
+    )
+    message(STATUS "WASM: external data mode - init.lua, data, mods, modules loaded at runtime from manifest.json")
+  else()
+    list(APPEND WASM_LINK_OPTIONS
           --preload-file=../otclientrc.lua@otclientrc.lua
           --preload-file=../init.lua@init.lua
           --preload-file=../data@data
           --preload-file=../mods@mods
           --preload-file=../modules@modules
+    )
+  endif()
+
+  list(APPEND WASM_LINK_OPTIONS
           --shell-file=../browser/shell.html
           --use-preload-cache
   )
