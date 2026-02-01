@@ -1,64 +1,47 @@
-# WASM: Extern data (init.lua, data, mods, modules)
+# WASM: Extern data – GitHub bygger, du bygger .data lokalt
 
-När **WASM_EXTERNAL_DATA=ON** packas inte `init.lua`, `data/`, `mods/` eller `modules/` in i bygget. De laddas istället från servern vid start via `manifest.json`. Då kan du:
+När **WASM_EXTERNAL_DATA=ON** packas inte `init.lua`, `data/`, `mods/` eller `modules/` in i bygget. Istället laddas **otclient.data** vid start via **otclient.data.loader.js**.
 
-- Bygga på GitHub utan att ladda upp privata filer
-- Deploya bygget + dina filer separat på servern
+- **GitHub** bygger html, js, wasm (inga privata filer)
+- **Du** bygger otclient.data + otclient.data.loader.js lokalt med dina filer
+- **Deploy** – ladda upp bygget + din .data + .loader.js
 
-## Var körs bygget?
+## Steg 1: Ladda ner GitHub-build
 
-- **På din GitHub:** Om du pushar detta repo till **ditt eget** konto (fork eller nytt repo) körs **Build Browser**-workflowen på **din** GitHub. Du laddar ner artifact därifrån.
-- **På officiella mehah/otclient:** Bygget körs på **deras** GitHub när de mergar till main. Då får du artifact från deras Actions.
+1. Gå till **Actions** → **Build Browser** → senaste körning
+2. Ladda ner artifact
+3. Packa upp t.ex. till `C:\path\to\deploy\`
 
-För att använda extern data med **dina** privata filer: pusha denna kod till **ditt** repo, låt GitHub bygga, ladda ner artifact, och deploya tillsammans med din egen manifest.json + init.lua/data/mods/modules på din server.
+## Steg 2: Bygg otclient.data lokalt
 
-## Bygg med extern data
+Din mapp med init.lua, data/, mods/, modules/ (och ev. otclientrc.lua, config.ini):
 
-### På GitHub (Actions)
-
-Workflow **Build Browser** (`.github/workflows/build-browser.yml`) körs vid push/PR. Dockerfile.browser är satt med `-DWASM_EXTERNAL_DATA=ON`, så artifact blir en build **utan** inbakad data.
-
-1. Pusha till ditt repo (eller öppna PR mot main).
-2. Gå till **Actions** → **Build Browser** → senaste körning.
-3. Ladda ner artifact **otclient-browser-&lt;sha&gt;**.
-4. Packa upp → använd innehållet i `build-emscripten-web/` (otclient.html, otclient.js, otclient.wasm, etc.).
-
-### Lokalt med Docker
-
-```bash
-cd /path/to/otclient
-bash Dockerfile.browser.sh
-```
-
-Utdata i `build-emscripten-web/`.
-
-## Generera manifest.json (lokalt, med dina filer)
-
-På din dator där du har **dina** init.lua, data/, mods/, modules/ (inkl. privata):
-
-```bash
+```powershell
 cd C:\wasm\github\otclient
-node browser/generate-manifest.js > manifest.json
+.\browser\build-otclient-data.ps1 -SourceDir "C:\path\to\din\otclient\med\dina\filer"
 ```
 
-Det skapar en `manifest.json` med alla filer under `data/`, `mods/`, `modules/` samt `init.lua`, `otclientrc.lua`, `config.ini` om de finns. Du kan ange andra mappar/filer:
+Med egen output-mapp:
 
-```bash
-node browser/generate-manifest.js data mods modules init.lua otclientrc.lua config.ini > manifest.json
+```powershell
+.\browser\build-otclient-data.ps1 -SourceDir "C:\din\data" -OutputDir "C:\path\to\deploy"
 ```
 
-## Deploy
+Detta skapar **otclient.data** och **otclient.data.loader.js**.
 
-1. **Byggfiler** (från GitHub artifact eller Docker): otclient.html, otclient.js, otclient.wasm, och övriga filer från `build-emscripten-web/`.
-2. **Din privata data** (samma sökväg som otclient.html):
-   - `manifest.json` (genererad ovan)
-   - `init.lua`
-   - `otclientrc.lua`, `config.ini` om du använder dem
-   - Mapparna `data/`, `mods/`, `modules/` med alla filer som listas i manifest.json
+## Steg 3: Deploy
 
-Exempel: om otclient ligger på `https://xnovaot.se/otclient/otclient.html`, ska `manifest.json`, `init.lua`, `data/`, `mods/`, `modules/` finnas under `https://xnovaot.se/otclient/` (samma origin). Klienten laddar då dessa från servern vid start.
+Lägg i samma mapp som otclient.html:
 
-## Säkerhet
+- otclient.html, otclient.js, otclient.wasm (från GitHub)
+- **otclient.data** (från ditt lokala bygge)
+- **otclient.data.loader.js** (från ditt lokala bygge)
 
-- init.lua och övriga filer serveras från **samma origin** som otclient.html (samma domän/sökväg). De exponeras inte i GitHub-repot.
-- Skydda känsliga sökvägar med serverns behörigheter (t.ex. .htaccess eller serverconfig) om du vill begränsa vem som får ladda ner dem.
+## Krav
+
+- **Docker** (för build-otclient-data.ps1)
+- Eller: emsdk med `file_packager.py` i PATH – scriptet kan anpassas
+
+## Filordning
+
+`otclient.data.loader.js` laddar innehållet i `otclient.data` innan spelet startar. Båda filerna måste finnas i samma mapp som `otclient.html`.

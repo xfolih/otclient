@@ -722,9 +722,9 @@ elseif(WASM)
   if(WASM_EXTERNAL_DATA)
     target_compile_definitions(otclient_core PRIVATE WASM_EXTERNAL_DATA)
     list(APPEND WASM_LINK_OPTIONS
-          --pre-js=${CMAKE_SOURCE_DIR}/browser/external-data-loader.js
+          --shell-file=../browser/shell-external-data.html
     )
-    message(STATUS "WASM: external data - init/data/mods/modules loaded at runtime from manifest.json")
+    message(STATUS "WASM: external data - loads otclient.data + otclient.data.loader.js (build .data locally)")
   else()
     list(APPEND WASM_LINK_OPTIONS -sPROXY_TO_PTHREAD)
     list(APPEND WASM_LINK_OPTIONS
@@ -736,10 +736,10 @@ elseif(WASM)
     )
   endif()
 
-  list(APPEND WASM_LINK_OPTIONS
-          --shell-file=../browser/shell.html
-          --use-preload-cache
-  )
+  if(NOT WASM_EXTERNAL_DATA)
+    list(APPEND WASM_LINK_OPTIONS --shell-file=../browser/shell.html)
+  endif()
+  list(APPEND WASM_LINK_OPTIONS --use-preload-cache)
 
   if(WASM_USE_WASM_EXCEPTIONS)
     list(APPEND WASM_LINK_OPTIONS "-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['emscripten_longjmp']")
