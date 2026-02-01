@@ -710,7 +710,6 @@ elseif(WASM)
           -sOFFSCREENCANVAS_SUPPORT=1
           -sOFFSCREEN_FRAMEBUFFER
           -sENVIRONMENT=web,worker
-          -sPROXY_TO_PTHREAD
           -sFULL_ES2=1
           -sMIN_WEBGL_VERSION=2
           -sMAX_WEBGL_VERSION=2
@@ -725,8 +724,10 @@ elseif(WASM)
     list(APPEND WASM_LINK_OPTIONS
           --pre-js=${CMAKE_SOURCE_DIR}/browser/external-data-loader.js
     )
+    # Run main() on main thread so it sees the FS that preRun populated (worker has separate FS)
     message(STATUS "WASM: external data mode - init.lua, data, mods, modules loaded at runtime from manifest.json")
   else()
+    list(APPEND WASM_LINK_OPTIONS -sPROXY_TO_PTHREAD)
     list(APPEND WASM_LINK_OPTIONS
           --preload-file=../otclientrc.lua@otclientrc.lua
           --preload-file=../init.lua@init.lua
