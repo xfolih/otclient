@@ -42,6 +42,11 @@ void ResourceManager::init(const char* argv0)
     PHYSFS_init(argv0);
     PHYSFS_permitSymbolicLinks(1);
 
+#if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
+    // External data loader writes to VFS root; mount it so discoverWorkDir finds init.lua
+    addSearchPath("/", true);
+#endif
+
 #if defined(WIN32)
     char fileName[255];
     GetModuleFileNameA(nullptr, fileName, sizeof(fileName));
@@ -60,22 +65,18 @@ void ResourceManager::terminate()
 
 bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 {
+#if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
+    // Root already mounted in init(); external loader guarantees files at /
+    m_workDir = "/";
+    return true;
+#endif
+
     // search for modules directory
-#ifdef __EMSCRIPTEN__
-    // External data loader writes to VFS root; PHYSFS needs "/" to find init.lua
-    std::string possiblePaths[] = { "/",
-                                    g_platform.getCurrentDir(),
-                                    g_resources.getBaseDir(),
-                                    g_resources.getBaseDir() + "/game_data/",
-                                    g_resources.getBaseDir() + "../",
-                                    g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
-#else
     std::string possiblePaths[] = { g_platform.getCurrentDir(),
                                     g_resources.getBaseDir(),
                                     g_resources.getBaseDir() + "/game_data/",
                                     g_resources.getBaseDir() + "../",
                                     g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
-#endif
 
     bool found = false;
     for (const auto& dir : possiblePaths) {

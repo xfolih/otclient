@@ -49,6 +49,7 @@
         }
         files.forEach(function(relativePath) {
           var url = baseURL + relativePath;
+          var vfsPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
           fetch(url)
             .then(function(res) {
               if (!res.ok) { done(); return; }
@@ -57,10 +58,10 @@
             .then(function(buf) {
               if (!buf) { done(); return; }
               try {
-                ensureDir(relativePath);
-                FS.writeFile(relativePath, new Uint8Array(buf));
+                ensureDir(vfsPath);
+                FS.writeFile(vfsPath, new Uint8Array(buf));
               } catch (e) {
-                if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: write ' + relativePath + ': ' + e);
+                if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: write ' + vfsPath + ': ' + e);
               }
               done();
             })

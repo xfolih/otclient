@@ -721,6 +721,7 @@ elseif(WASM)
   )
 
   if(WASM_EXTERNAL_DATA)
+    target_compile_definitions(otclient_core PRIVATE WASM_EXTERNAL_DATA)
     list(APPEND WASM_LINK_OPTIONS
           --pre-js=${CMAKE_SOURCE_DIR}/browser/external-data-loader.js
     )
