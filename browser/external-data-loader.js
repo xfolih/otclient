@@ -6,9 +6,17 @@
 (function() {
   function getBaseURL() {
     var pathname = typeof location !== 'undefined' && location.pathname ? location.pathname : '/';
-    var lastSlash = pathname.lastIndexOf('/');
-    if (lastSlash <= 0) return (typeof location !== 'undefined' ? location.origin : '') + '/';
-    return (typeof location !== 'undefined' ? location.origin : '') + pathname.substring(0, lastSlash + 1);
+    var origin = typeof location !== 'undefined' ? location.origin : '';
+    if (!pathname || pathname === '/') return origin + '/';
+    var dir;
+    if (pathname.endsWith('/')) {
+      dir = pathname;
+    } else if (pathname.lastIndexOf('.') > pathname.lastIndexOf('/')) {
+      dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
+    } else {
+      dir = pathname + '/';
+    }
+    return origin + dir;
   }
 
   function ensureDir(path) {
@@ -31,6 +39,7 @@
     addRunDependency('externalData');
     var baseURL = getBaseURL();
     var manifestURL = baseURL + 'manifest.json';
+    if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: fetching manifest ' + manifestURL);
     fetch(manifestURL)
       .then(function(res) {
         if (!res.ok) throw new Error('manifest.json failed: ' + res.status);
@@ -39,13 +48,18 @@
       .then(function(manifest) {
         var files = manifest.files || manifest;
         if (!Array.isArray(files) || files.length === 0) {
+          if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: no files in manifest');
           removeRunDependency('externalData');
           return;
         }
+        if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: loading ' + files.length + ' files');
         var pending = files.length;
         function done() {
           pending--;
-          if (pending <= 0) removeRunDependency('externalData');
+          if (pending <= 0) {
+            if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: all files loaded');
+            removeRunDependency('externalData');
+          }
         }
         files.forEach(function(relativePath) {
           var url = baseURL + relativePath;
