@@ -43,7 +43,6 @@ void ResourceManager::init(const char* argv0)
     PHYSFS_permitSymbolicLinks(1);
 
 #if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
-    // External data loader writes to VFS root; mount it so discoverWorkDir finds init.lua
     addSearchPath("/", true);
 #endif
 
@@ -66,7 +65,6 @@ void ResourceManager::terminate()
 bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 {
 #if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
-    // Root already mounted in init(); external loader guarantees files at /
     m_workDir = "/";
     return true;
 #endif

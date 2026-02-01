@@ -1,0 +1,25 @@
+# Build environment for otclient WASM. Use this to rebuild with your own data.
+# Build once:  docker build -t otclient-buildenv -f Dockerfile.buildenv .
+# Then run:    (see browser/build-data-only.ps1)
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    build-essential ca-certificates cmake curl git ninja-build pkg-config \
+    python3 python3-pip unzip xz-utils zip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+RUN git clone --filter=blob:none --single-branch --depth 1 https://github.com/emscripten-core/emsdk.git emsdk \
+    && ./emsdk/emsdk install latest && ./emsdk/emsdk activate latest
+
+ENV VCPKG_ROOT=/opt/vcpkg
+COPY vcpkg.json /tmp/vcpkg.json
+RUN git clone --filter=blob:none https://github.com/microsoft/vcpkg.git ${VCPKG_ROOT} \
+    && cd ${VCPKG_ROOT} && git checkout "$(grep 'builtin-baseline' /tmp/vcpkg.json | cut -d'"' -f4)" \
+    && ./bootstrap-vcpkg.sh
+
+WORKDIR /workspace
+COPY . /workspace
+
+ENV PATH="/opt/emsdk/upstream/emscripten:${PATH}"
+CMD ["/bin/bash"]

@@ -1,7 +1,7 @@
 /**
- * Load init.lua, data, mods, modules from the server at runtime (same origin).
- * Used when WASM_EXTERNAL_DATA=ON so private files are not baked into the build.
- * Requires manifest.json next to otclient.html listing all files to fetch.
+ * Load init.lua, data, mods, modules from server at runtime (same origin).
+ * Uses synchronous XHR to ensure ALL files are in VFS before main() runs.
+ * Requires manifest.json next to otclient.html.
  */
 (function() {
   function getBaseURL() {
@@ -25,70 +25,54 @@
     for (var i = 0; i < parts.length - 1; i++) {
       current += (current ? '/' : '') + parts[i];
       try {
-        if (!FS.analyzePath(current).exists) {
-          FS.mkdir(current);
-        }
-      } catch (e) {
-        // ignore if exists
-      }
+        if (!FS.analyzePath(current).exists) FS.mkdir(current);
+      } catch (e) {}
     }
+  }
+
+  function syncFetch(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, false);
+    xhr.responseType = 'arraybuffer';
+    xhr.send();
+    if (xhr.status !== 200) throw new Error(url + ': ' + xhr.status);
+    return xhr.response;
   }
 
   function loadExternalData() {
     if (typeof addRunDependency !== 'function' || typeof removeRunDependency !== 'function') return;
     addRunDependency('externalData');
-    var baseURL = getBaseURL();
-    var manifestURL = baseURL + 'manifest.json';
-    if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: fetching manifest ' + manifestURL);
-    fetch(manifestURL)
-      .then(function(res) {
-        if (!res.ok) throw new Error('manifest.json failed: ' + res.status);
-        return res.json();
-      })
-      .then(function(manifest) {
-        var files = manifest.files || manifest;
-        if (!Array.isArray(files) || files.length === 0) {
-          if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: no files in manifest');
-          removeRunDependency('externalData');
-          return;
+    try {
+      var baseURL = getBaseURL();
+      var manifestURL = baseURL + 'manifest.json';
+      var log = function(msg) { try { if (typeof Module !== 'undefined' && Module.printErr) Module.printErr(msg); } catch (_) {} };
+      log('external-data: loading ' + manifestURL);
+      var manifestBuf = syncFetch(manifestURL);
+      var manifest = JSON.parse(new TextDecoder().decode(manifestBuf));
+      var files = manifest.files || manifest;
+      if (!Array.isArray(files) || files.length === 0) {
+        log('external-data: manifest has no files');
+        return;
+      }
+      log('external-data: writing ' + files.length + ' files');
+      for (var i = 0; i < files.length; i++) {
+        var rel = files[i];
+        var url = baseURL + rel;
+        var vfsPath = rel.startsWith('/') ? rel : '/' + rel;
+        try {
+          var buf = syncFetch(url);
+          ensureDir(vfsPath);
+          FS.writeFile(vfsPath, new Uint8Array(buf));
+        } catch (e) {
+          log('external-data: ' + vfsPath + ' ' + e);
         }
-        if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: loading ' + files.length + ' files');
-        var pending = files.length;
-        function done() {
-          pending--;
-          if (pending <= 0) {
-            if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: all files loaded');
-            removeRunDependency('externalData');
-          }
-        }
-        files.forEach(function(relativePath) {
-          var url = baseURL + relativePath;
-          var vfsPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
-          fetch(url)
-            .then(function(res) {
-              if (!res.ok) { done(); return; }
-              return res.arrayBuffer();
-            })
-            .then(function(buf) {
-              if (!buf) { done(); return; }
-              try {
-                ensureDir(vfsPath);
-                FS.writeFile(vfsPath, new Uint8Array(buf));
-              } catch (e) {
-                if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: write ' + vfsPath + ': ' + e);
-              }
-              done();
-            })
-            .catch(function(err) {
-              if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: fetch ' + url + ': ' + err);
-              done();
-            });
-        });
-      })
-      .catch(function(err) {
-        if (typeof Module !== 'undefined' && Module.printErr) Module.printErr('external-data: ' + err);
-        removeRunDependency('externalData');
-      });
+      }
+      log('external-data: done');
+    } catch (e) {
+      try { (typeof Module !== 'undefined' && Module.printErr && Module.printErr('external-data: ' + e)); } catch (_) {}
+    } finally {
+      removeRunDependency('externalData');
+    }
   }
 
   var Module = typeof Module !== 'undefined' ? Module : {};

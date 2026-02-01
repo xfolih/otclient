@@ -2,8 +2,8 @@
 
 När **WASM_EXTERNAL_DATA=ON** packas inte `init.lua`, `data/`, `mods/` eller `modules/` in i bygget. De laddas istället från servern vid start via `manifest.json`. Då kan du:
 
-- Bygga på GitHub utan att lägga privata filer i repot
-- Deploya bygget en gång och uppdatera init.lua/data/mods/modules på servern utan ombyggnad
+- Bygga på GitHub utan att ladda upp privata filer
+- Deploya bygget + dina filer separat på servern
 
 ## Var körs bygget?
 

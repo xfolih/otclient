@@ -724,8 +724,7 @@ elseif(WASM)
     list(APPEND WASM_LINK_OPTIONS
           --pre-js=${CMAKE_SOURCE_DIR}/browser/external-data-loader.js
     )
-    # Run main() on main thread so it sees the FS that preRun populated (worker has separate FS)
-    message(STATUS "WASM: external data mode - init.lua, data, mods, modules loaded at runtime from manifest.json")
+    message(STATUS "WASM: external data - init/data/mods/modules loaded at runtime from manifest.json")
   else()
     list(APPEND WASM_LINK_OPTIONS -sPROXY_TO_PTHREAD)
     list(APPEND WASM_LINK_OPTIONS
