@@ -42,6 +42,10 @@ void ResourceManager::init(const char* argv0)
     PHYSFS_init(argv0);
     PHYSFS_permitSymbolicLinks(1);
 
+#if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
+    addSearchPath("/", true);
+#endif
+
 #if defined(WIN32)
     char fileName[255];
     GetModuleFileNameA(nullptr, fileName, sizeof(fileName));
@@ -60,6 +64,11 @@ void ResourceManager::terminate()
 
 bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 {
+#if defined(__EMSCRIPTEN__) && defined(WASM_EXTERNAL_DATA)
+    m_workDir = "/";
+    return true;
+#endif
+
     // search for modules directory
     std::string possiblePaths[] = { g_platform.getCurrentDir(),
                                     g_resources.getBaseDir(),

@@ -50,6 +50,7 @@ RUN source /opt/emsdk/emsdk_env.sh \
  && rm -rf /opt/emsdk/upstream/emscripten/cache \
  && cmake -G Ninja -S /workspace -B ${BUILD_DIR} \
     -DWASM=ON \
+    -DWASM_EXTERNAL_DATA=ON \
     -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=/opt/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake \
     -DVCPKG_TARGET_TRIPLET=wasm32-emscripten-pthread \
