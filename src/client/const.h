@@ -579,6 +579,9 @@ namespace Otc
         GameCreaturePaperdoll = 128,
         GameMultiSpr = 129,
         GameVocationMonk = 130,
+        GameLevelPercentU16 = 131,
+        GameEffectSource = 132,
+        GameNpcWindowRedesign = 133,
         LastGameFeature
     };
 
@@ -885,6 +888,43 @@ namespace Otc
         IMBUEMENT_WINDOW_SCROLL = 2
     };
 
+    enum ClientEventType_t : uint8_t
+    {
+        CLIENT_EVENT_TYPE_SIMPLE = 1,
+        CLIENT_EVENT_TYPE_ACHIEVEMENT = 2,
+        CLIENT_EVENT_TYPE_TITLE = 3,
+        CLIENT_EVENT_TYPE_LEVEL = 4,
+        CLIENT_EVENT_TYPE_SKILL = 5,
+        CLIENT_EVENT_TYPE_BESTIARY = 6,
+        CLIENT_EVENT_TYPE_BOSSTIARY = 7,
+        CLIENT_EVENT_TYPE_QUEST = 8,
+        CLIENT_EVENT_TYPE_COSMETIC = 9,
+        CLIENT_EVENT_TYPE_PROFICIENCY = 10,
+        CLIENT_EVENT_TYPE_LAST
+    };
+
+    enum ClientEvent_t : uint8_t
+    {
+        // screenshot
+        CLIENT_EVENT_NONE = 0,
+        CLIENT_EVENT_BOSSDEFEATED = 1,
+        CLIENT_EVENT_DEATHPVE = 2,
+        CLIENT_EVENT_DEATHPVP = 3,
+        CLIENT_EVENT_PLAYERKILLASSIST = 4,
+        CLIENT_EVENT_PLAYERKILL = 5,
+        CLIENT_EVENT_PLAYERATTACKING = 6,
+        CLIENT_EVENT_TREASUREFOUND = 7,
+        CLIENT_EVENT_GIFTOFLIFE = 8,
+        // pop up
+        CLIENT_EVENT_ATTACKSTOPPED = 9,
+        CLIENT_EVENT_CAPACITYLIMIT = 10,
+        CLIENT_EVENT_OUTOFAMMO = 11,
+        CLIENT_EVENT_TARGETTOOCLOSE = 12,
+        CLIENT_EVENT_OUTOFSOULPOINTS = 13,
+        CLIENT_EVENT_TUTORIALCOMPLETE = 14,
+        CLIENT_EVENT_LAST
+    };
+
     enum Vocations_t : uint8_t
     {
         NONE = 0,
@@ -992,6 +1032,20 @@ namespace Otc
         WheelGemQuality_Regular  = 1,
         WheelGemQuality_Greater  = 2,
         WheelGemQuality_Supreme  = 3
+    };
+
+    enum MagicEffectSources : uint8_t
+    {
+        // always 100% opacity, not configurable
+        ME_SOURCE_DEFAULT = 0,
+
+        // configurable with sliders in the client
+        ME_SOURCE_OWN = 1,
+        ME_SOURCE_OTHER_PLAYER = 2,
+        ME_SOURCE_MONSTER = 3,
+        ME_SOURCE_BOSS = 4,
+
+        ME_SOURCE_LAST = ME_SOURCE_BOSS
     };
 }
 
